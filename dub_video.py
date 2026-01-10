@@ -49,6 +49,7 @@ class AudioTranscription:
 
 class TextTranslator:
     def __init__(self, source_lang="en", target_lang="hi"):
+        """Initialize TextTranslator with specific language pair"""
         self.translator = GoogleTranslator(source=source_lang, target=target_lang)
 
     def translate(self, text: str) -> str:
