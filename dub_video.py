@@ -64,7 +64,7 @@ class VoiceCloner:
         self.device = device
         self.tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=False, gpu=(device=="cuda"))
 
-    def clone(self, text: str, reference_audio: str, output_path: str, language="hi"):
+    def clone(self, text: str, reference_audio: str, output_path: str, language: str = "hi") -> None:
         logging.info(f"Cloning voice in '{language}'. Outputting to {output_path}")
         self.tts.tts_to_file(
             text=text,
