@@ -81,6 +81,8 @@ class LipSyncer:
         os.makedirs(self.work_dir, exist_ok=True)
     
     def sync(self, video_path: str, audio_path: str, output_path: str):
+        import os
+        if not os.path.exists(video_path): raise FileNotFoundError(f"Missing {video_path}")
         logging.info(f"Starting Lip Sync using {self.method}...")
         
         if self.method == "videoretalking":
