@@ -87,3 +87,7 @@ If we need to process `30,000` minutes (500 hours) in roughly `12` hours overnig
 - **Silences & Voice Activity Detection (VAD):** Integrate `Pyannote` to segment out non-speaking/background noise segments dynamically so the XTTS voice isn't attempting to "hallucinate" lip-smacks.
 - **LLM Context-Aware Prompts:** I'd rip out `deep_translator` and invoke a local LLM or fast generic API fed with system logic: _"Translate this instructional nanny dialogue into friendly, conversational, culturally empathetic Hindi without stiff phrasing."_
 - **Pitch Tracing & Intonation:** Extract pitch curves from the original English audio snippet using Librosa, mapping them natively over the Hindi result, so the TTS engine replicates identical human emotional inflections instead of an entirely standard readout.
+
+
+## License
+This project is licensed under the MIT License.
