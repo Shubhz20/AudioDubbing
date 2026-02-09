@@ -104,6 +104,7 @@ class LipSyncer:
         subprocess.run(cmd, check=True)
 
     def _run_wav2lip(self, video_path, audio_path, output_path):
+        logging.debug(f"Running Wav2Lip on {video_path}")
         import shlex
         cmd = [
             "python", "Wav2Lip/inference.py",
