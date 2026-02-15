@@ -7,7 +7,7 @@ import wave
 os.environ["COQUI_TOS_AGREED"] = "1"
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 try:
     from faster_whisper import WhisperModel
