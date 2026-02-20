@@ -14,3 +14,5 @@ for line in lines:
 
 with open("dub_video.py", "w") as f:
     f.writelines(new_lines)
+
+# Final sync utility scripts updated
