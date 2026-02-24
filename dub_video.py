@@ -3,6 +3,9 @@ import subprocess
 import logging
 import wave
 
+# Suppress the Coqui XTTS Terms of Service Interactive Prompt
+os.environ["COQUI_TOS_AGREED"] = "1"
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -25,17 +28,11 @@ except ImportError:
 
 class AudioTranscription:
     def __init__(self, model_size="base", device="cuda"):
-        """
-        SCALE ARCHITECTURE: For processing 500 hours, we would use Whisper 'large-v3' deployed 
-        on a scalable inference endpoint (e.g., vLLM or Hugging Face TGI) to process batched chunks.
-        For ₹0 cost and demonstration, we use faster-whisper on 'base' or 'small'.
-        """
         compute_type = "float16" if device == "cuda" else "int8"
         self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
 
     def transcribe(self, audio_path: str) -> list:
         logging.info(f"Transcribing {audio_path}...")
-        # beam_size=5 is a good balance between speed and accuracy
         segments, info = self.model.transcribe(audio_path, beam_size=5)
         
         result_segments = []
@@ -52,11 +49,6 @@ class AudioTranscription:
 
 class TextTranslator:
     def __init__(self, source_lang="en", target_lang="hi"):
-        """
-        SCALE ARCHITECTURE: Currently using GoogleTranslator API for ₹0 cost constraint. 
-        For a sustainable startup pipeline, we would replace this with IndicTrans2 or 
-        a local finetuned LLM (Llama 3 8B) for context-aware translations. 
-        """
         self.translator = GoogleTranslator(source=source_lang, target=target_lang)
 
     def translate(self, text: str) -> str:
@@ -68,13 +60,7 @@ class TextTranslator:
 
 class VoiceCloner:
     def __init__(self, device="cuda"):
-        """
-        SCALE ARCHITECTURE: Coqui XTTS v2 is excellent for open-source high-fidelity cloning.
-        For processing 500 hours, the model state should be kept in VRAM constantly, 
-        and requests passed through a message broker (RabbitMQ/Redis) rather than reloading the model.
-        """
         self.device = device
-        # Disabling progress bars for cleaner logs when scaling
         self.tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2", progress_bar=False, gpu=(device=="cuda"))
 
     def clone(self, text: str, reference_audio: str, output_path: str, language="hi"):
@@ -89,11 +75,6 @@ class VoiceCloner:
 
 class LipSyncer:
     def __init__(self, method="wav2lip", work_dir="./output"):
-        """
-        SCALE ARCHITECTURE: Heavy models like VideoReTalking or Wav2Lip eat VRAM.
-        For production, we segment videos into tiny chunks, run them asynchronously 
-        on separate Celery workers, and recombine using ffmpeg's concat demuxer.
-        """
         self.method = method.lower()
         self.work_dir = work_dir
         os.makedirs(self.work_dir, exist_ok=True)
@@ -147,21 +128,9 @@ class VideoDubberPipeline:
         self.transcriber = AudioTranscription(device=self.device)
         self.translator = TextTranslator()
         self.cloner = VoiceCloner(device=self.device)
-        
-        # In a Colab environment, Wav2Lip provides a great balance of speed/quality.
-        # For the best visual fidelity, VideoReTalking avoids mouth blurring, but uses much more compute.
         self.syncer = LipSyncer(method="wav2lip", work_dir=self.output_dir)
 
     def run(self, start_time: str = "00:00:15", duration_sec: int = 15):
-        """
-        The Pipeline:
-        1. Extract the specific 15-30s video segment (saving processing time).
-        2. Extract original audio (to give to VoiceCloner as reference).
-        3. Transcribe & text translation.
-        4. Clone voice in Hindi.
-        5. Time-stretch the cloned audio to strictly match the video's original duration.
-        6. Finally apply Lip Syncing.
-        """
         logging.info("--- Starting 'The Golden 15 Seconds' Pipeline ---")
         
         segment_video = os.path.join(self.output_dir, "segment.mp4")
@@ -178,7 +147,6 @@ class VideoDubberPipeline:
         raw_hindi_audio = os.path.join(self.output_dir, "hindi_audio_raw.wav")
         self.cloner.clone(hindi_text, reference_audio=segment_audio, output_path=raw_hindi_audio, language="hi")
         
-        # Audio length adjustment ensures lip-sync doesn't drop frames or get skewed.
         adjusted_hindi_audio = os.path.join(self.output_dir, "hindi_audio_synced.wav")
         self._match_audio_duration(raw_hindi_audio, adjusted_hindi_audio, float(duration_sec))
         
@@ -208,11 +176,8 @@ class VideoDubberPipeline:
             rate = w.getframerate()
             duration = frames / float(rate)
         
-        # Calculate how much we need to speed up or slow down
         ratio = duration / target_seconds
         
-        # ffmpeg's atempo filter is limited to [0.5, 2.0] per filter.
-        # If difference is extreme, we chain them.
         filters = []
         temp_ratio = ratio
         while temp_ratio > 2.0:
